@@ -18,6 +18,8 @@ from irsim.global_param import world_param, env_param
 from irsim.world import SensorFactory
 from irsim.env.env_plot import linewidth_from_data_units
 from irsim.global_param.path_param import path_manager
+from shapely.strtree import STRtree
+from shapely.geometry import MultiLineString
 
 from irsim.util.util import (
     WrapToRegion,
@@ -425,19 +427,23 @@ class ObjectBase:
         """
         Check if the object is in collision with others.
         """
-        collision_flags = [self.check_collision(obj) for obj in self.external_objects if not obj.unobstructed] 
+        collision_flags = []
 
         self.collision_obj = []
 
         for obj in self.external_objects:
             if not obj.unobstructed:
                 if self.check_collision(obj):
+                    collision_flags.append(True)
                     self.collision_obj.append(obj)
+                    
                     if self.role == "robot":
                         if not self.collision_flag:
                             env_param.logger.warning(
                                 f"{self.name} collided with {obj.name} at state {np.round(self.state[:3, 0], 2).tolist()}"
                             )
+                else:
+                    collision_flags.append(False)
 
         self.collision_flag = any(collision_flags)
 
@@ -451,6 +457,16 @@ class ObjectBase:
         Returns:
             bool: True if collision occurs, False otherwise.
         """
+
+        if obj.shape == "map":
+            line_strings = list(obj._geometry.geoms) 
+            tree = STRtree(line_strings)
+            candidate_indices = tree.query(self.geometry)
+            filtered_lines = [line_strings[i] for i in candidate_indices]
+            filtered_multi_line = MultiLineString(filtered_lines)
+
+            return shapely.intersects(self.geometry, filtered_multi_line)
+
         return shapely.intersects(self.geometry, obj._geometry)
 
     def gen_behavior_vel(self, velocity: Optional[np.ndarray] = None) -> np.ndarray:
@@ -692,6 +708,57 @@ class ObjectBase:
         """
         self._init_geometry = geometry
 
+    def set_random_goal(
+        self,
+        obstacle_list,
+        init: bool = False,
+        free: bool = True,
+        goal_check_radius: float = 0.2,
+        range_limits: list = None,
+        max_attempts: int = 100,
+        ):
+        """
+        Set random goal(s) in the environment. If free set to True, the goal will be placed only in the free from
+        obstacles part of the environment.
+
+        Args:
+            obstacle_list: List of objects in the environment
+            init (bool): Whether to set the initial goal (default False).
+            free (bool): Whether to check that goal is placed in a position free of obstacles.
+            goal_check_radius (float): Radius in which to check if the goal is free of obstacles.
+            range_limits (list): List of lower and upper bound range limits in which to set the random goal position.
+            max_attempts (int): Max number of attempts to place the goal in a position free of obstacles.
+        """
+        if range_limits is None:
+            range_limits = [self.rl, self.rh]
+
+        deque_goals = deque()
+        for _ in range(len(self._goal)):
+            if free:
+                covered_goal = True
+                counter = 0
+                while covered_goal and counter < max_attempts:
+                    goal = random_point_range(range_limits[0], range_limits[1]).flatten().tolist()
+                    shape = {"name": "circle", "radius": goal_check_radius}
+                    gf = GeometryFactory.create_geometry(**shape)
+                    geometry = gf.step(np.c_[goal])
+                    covered_goal = any(
+                        [
+                            shapely.intersects(geometry, obj._geometry)
+                            for obj in obstacle_list
+                        ]
+                    )
+                    counter += 1
+                if counter == max_attempts:
+                    env_param.logger.warning(
+                        f"Could not place the goal in a position free of obstacles in {max_attempts} tries"
+                    )
+            else :
+                goal = random_point_range(range_limits[0], range_limits[1]).flatten().tolist()
+            deque_goals.append(goal)
+
+        self.set_goal(deque_goals, init=init)
+
     def set_goal(self, goal: Union[list, np.ndarray] = [10, 10, 0], init: bool = False):
         """
         Set the goal of the object.
@@ -735,6 +802,21 @@ class ObjectBase:
             self._init_goal = goal_deque
 
         self._goal = goal_deque
+
+
+    def set_laser_color(self, laser_indices, laser_color: str = 'cyan'):
+        """
+        Set the color of the lasers.
+
+        Args:
+            laser_indices (list): The indices of the lasers to set the color.
+            laser_color (str): The color to set the lasers. Default is 'blue'.
+        """
+
+        if self.lidar is not None:
+            self.lidar.set_laser_color(laser_indices, laser_color)
+        else:
+            env_param.logger.warning("No lidar sensor found for this object.")
 
     def geometry_state_transition(self):
         pass
@@ -1052,7 +1134,7 @@ class ObjectBase:
 
         r_phi_ang = 180 * self.state[2, 0] / pi
 
-        if trail_type == "rectangle" or trail_type == "polygon":
+        if trail_type == "rectangle":
             start_x = self.vertices[0, 0]
             start_y = self.vertices[1, 0]
 
@@ -1072,6 +1154,14 @@ class ObjectBase:
                 art3d.patch_2d_to_3d(car_rect, z=self.z)
 
             ax.add_patch(car_rect)
+
+        elif trail_type == "polygon":
+            car_polygon = mpl.patches.Polygon(self.vertices.T, edgecolor=trail_color, alpha=trail_alpha, linewidth=trail_linewidth, fill=False, facecolor=trail_color)
+
+            if isinstance(ax, Axes3D):
+                art3d.patch_2d_to_3d(car_polygon, z=self.z)
+
+            ax.add_patch(car_polygon)
 
         elif trail_type == "circle":
             car_circle = mpl.patches.Circle(

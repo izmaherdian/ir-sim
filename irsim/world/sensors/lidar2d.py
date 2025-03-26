@@ -175,6 +175,16 @@ class Lidar2D:
 
     def laser_geometry_process(self, lidar_geometry):
 
+        '''
+        Find the intersected objects and return the intersected indices with the lidar geometry
+        
+        Args:
+            lidar_geometry (shapely.geometry.MultiLineString): The geometry of the lidar.
+
+        Returns:
+            list: The indices of the intersected objects.
+        '''
+
         filtered_objects = [
             obj
             for obj in env_param.objects
@@ -190,9 +200,23 @@ class Lidar2D:
 
         for geom_index in potential_geometries_index:
             geo = geometries[geom_index]
-            if lidar_geometry.intersects(geo):
-                geometries_to_subtract.append(geo)
-                intersect_indices.append(geom_index)
+            obj = filtered_objects[geom_index]
+
+            if obj.shape == 'map':
+                linestrings = [line for line in geo.geoms]
+                tree = STRtree(linestrings)
+                potential_intersections = tree.query(lidar_geometry)
+                filtered_lines = [linestrings[i] for i in potential_intersections]
+                filtered_multi_lines = MultiLineString(filtered_lines)
+
+                if lidar_geometry.intersects(filtered_multi_lines):
+                    geometries_to_subtract.append(filtered_multi_lines)
+                    intersect_indices.append(geom_index)
+
+            else:
+                if lidar_geometry.intersects(geo):
+                    geometries_to_subtract.append(geo)
+                    intersect_indices.append(geom_index)
 
         if geometries_to_subtract:
             merged_geometry = unary_union(geometries_to_subtract)
@@ -301,17 +325,35 @@ class Lidar2D:
             lines.append(segment)
 
         if isinstance(ax, Axes3D):
-            line_segments = Line3DCollection(
+            self.line_segments = Line3DCollection(
                 lines, linewidths=1, colors=self.color, alpha=self.alpha, zorder=0
             )
-            ax.add_collection3d(line_segments)
+            ax.add_collection3d(self.line_segments)
         else:
-            line_segments = LineCollection(
+            self.line_segments = LineCollection(
                 lines, linewidths=1, colors=self.color, alpha=self.alpha, zorder=0
             )
-            ax.add_collection(line_segments)
+            ax.add_collection(self.line_segments)
 
-        self.plot_patch_list.append(line_segments)
+        self.plot_patch_list.append(self.line_segments)
+    
+    def set_laser_color(self, laser_indices, laser_color: str = 'blue'):
+
+        """
+        Set a specific color of the selected lasers.
+
+        Args:
+            laser_indices (list): The indices of the lasers to set the color.
+            laser_color (str): The color to set the selected lasers. Default is 'blue'.
+        """
+
+        current_color = [self.color] * self.number
+
+        for index in laser_indices:
+            if index < self.number:
+                current_color[index] = laser_color
+
+        self.line_segments.set_color(current_color)
 
     def plot_clear(self):
         """

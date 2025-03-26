@@ -15,16 +15,16 @@
 <a href="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue"> <img src="https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue" alt="Python Version"></a>
 </div>
 
-**Documentation:** [https://ir-sim.readthedocs.io/en](https://ir-sim.readthedocs.io/en/latest/)
+**Documentation:** [https://ir-sim.readthedocs.io/en](https://ir-sim.readthedocs.io/en)
 
-**IR-SIM** is an open-source, lightweight robot simulator based on Python, designed for robotics navigation, control, and learning. This simulator provides a simple and user-friendly framework for simulating robots, sensors, and environments, facilitating the development and testing of robotics algorithms with minimal hardware requirements. 
+**IR-SIM** is an open-source, lightweight robot simulator based on Python, designed for robotics navigation, control, and learning. This simulator provides a simple and user-friendly framework for simulating robots, sensors, and environments, thereby lowering the barrier to developing, training, and testing AI & robotics algorithms with minimal coding and hardware requirements.
 
 ## Features
 
-- Simulate a wide range of robot platforms with diverse kinematics, sensors, and behaviors  ([support](#support)). 
-- Quickly configure and customize simulation scenarios using straightforward YAML files. No complex coding required.
-- Visualize simulation outcomes in real time for immediate feedback and analysis using a naive visualizer matplotlib.
-- Support collision detection and behavior control for each object in the simulation.
+- Simulate robot platforms with diverse kinematics, sensors, and behaviors  ([support](#support)). 
+- Quickly configure and customize scenarios using straightforward YAML files. No complex coding required.
+- Visualize simulation outcomes using a naive visualizer matplotlib for immediate debugging.
+- Support collision detection and behavior control for each object.
 
 ## Demonstrations
 
@@ -32,6 +32,7 @@
 | :--------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------: |
 | <img src="https://github.com/user-attachments/assets/5930b088-d400-4943-8ded-853c22eae75b" alt="drawing" width="280"/> | In scenarios involving multiple circular differential robots, each robot employs Reciprocal Velocity Obstacle (RVO) behavior to avoid collisions. |
 | <img src="https://github.com/user-attachments/assets/3257abc1-8bed-40d8-9b51-e5d90b06ee06" alt="drawing" width="280"/> |                   A car-like robot controlled via keyboard navigates a binary map using a 2D LiDAR sensor to detect obstacles.                    |
+| <img src="https://github.com/user-attachments/assets/067abec3-08a3-418d-8a1b-fe959df0b580" alt="drawing" width="280"/> |  A car-like robot controlled via keyboard navigates a grid map generated from 3D habitat spaces datasets like [HM3D](https://aihabitat.org/datasets/hm3d/), [MatterPort3D](https://niessner.github.io/Matterport/), [Gibson](http://gibsonenv.stanford.edu/database/), etc. |
 | <img src="https://github.com/user-attachments/assets/7aa809c2-3a44-4377-a22d-728b9dbdf8bc" alt="drawing" width="280"/> |                 Each robot employing RVO behavior is equipped with a field of view (FOV) to detect other robots within this area.                 |
 | <img src="https://github.com/user-attachments/assets/1cc8a4a6-2f41-4bc9-bc59-a7faff443223" alt="drawing" width="280"/> |                                  A car-like robot navigates through the randomly generated and moving obstacles                                   |
 
