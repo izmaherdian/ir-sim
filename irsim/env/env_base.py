@@ -100,7 +100,7 @@ class EnvBase:
             self.objects,
             self._world.x_range,
             self._world.y_range,
-            **self.env_config.parse["plot"],
+            **self._world.plot_parse,
         )
 
         env_param.objects = self.objects
