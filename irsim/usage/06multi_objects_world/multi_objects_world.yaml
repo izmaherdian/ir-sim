@@ -21,8 +21,8 @@ robot:
       - [9, 9, 0] 
       - [9, 2, 0]
     behavior: 
-      - {name: 'dash'} # move toward to the goal directly 
-      - {name: 'dash'} # move toward to the goal directly
+      - {name: 'rvo'} # move toward to the goal directly 
+      - {name: 'rvo'} # move toward to the goal directly
     color: 
       - 'royalblue'
       - 'red'

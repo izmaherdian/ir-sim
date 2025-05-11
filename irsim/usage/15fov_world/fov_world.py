@@ -2,7 +2,7 @@ import irsim
 
 env = irsim.make()
 
-for i in range(200):
+for i in range(500):
 
     env.step()
 
